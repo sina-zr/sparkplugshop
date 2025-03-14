@@ -1,0 +1,222 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SparkPlugSln.Api</name>
+    </assembly>
+    <members>
+        <member name="M:SparkPlugSln.Api.Controllers.CartController.SaveCart(SparkPlugSln.Domain.Models.Cart.CartDto)">
+            <summary>
+            Save User Card
+            </summary>
+            <param name="cartDto"></param>
+            <response code="200">successfully saved</response>
+            <response code="400">invalid inputs</response>
+            <response code="404">user not found</response>
+            <response code="404">address not found</response>
+            <response code="500">server error</response>
+            <returns>just status codes</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.CartController.CreatePaymentSession(System.Guid)">
+            <summary>
+            Creates a payment session
+            </summary>
+            <param name="userId"></param>
+            <response code="400">invalid input</response>
+            <response code="404">user not found</response>
+            <response code="500">server error</response>
+            <returns>returns payment gateway url</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.CartController.GetOrdersList(System.Int32,System.Int32,System.String)">
+            <summary>
+            get list of orders for admin
+            </summary>
+            <param name="pageId"></param>
+            <param name="pageSize"></param>
+            <param name="filterUser"></param>
+            <response code="403">forbidden</response>
+            <response code="404">no order found</response>
+            <response code="500">server error</response>
+            <returns></returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.CartController.GetOrderDetails(System.UInt64)">
+            <summary>
+            get order's detail for admin
+            </summary>
+            <param name="cartId"></param>
+            <response code="403">forbidden</response>
+            <response code="404">order not found</response>
+            <response code="500">server error</response>
+            <returns></returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.CartController.ChangeOrderStatus(System.UInt64,SparkPlugSln.Domain.Enums.CartStatus)">
+            <summary>
+            change order status
+            </summary>
+            <param name="cartId"></param>
+            <param name="status"></param>
+            <response code="200">successfully changed</response>
+            <response code="400">invalid inputs</response>
+            <response code="403">forbidden</response>
+            <response code="404">order not found</response>
+            <response code="500">server error</response>
+            <returns></returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.CartController.DeleteOrder(System.UInt64)">
+            <summary>
+            Delete Order By Admin
+            </summary>
+            <param name="cartId"></param>
+            <response code="403">forbidden</response>
+            <response code="404">cart not found</response>
+            <response code="500">server error</response>
+            <returns>Ok if successfully deleted</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.ProductController.GetProductsList(System.Int32,System.Int32,System.String)">
+            <summary>
+            GetProductsList for users
+            </summary>
+            <param name="pageId">default is 1</param>
+            <param name="pageSize">default is 9</param>
+            <param name="filterName">default is empty</param>
+            <response code="404">no item found</response>
+            <returns>list of products with pagination</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.ProductController.GetProductsListForAdmin(System.Int32,System.Int32,System.String)">
+            <summary>
+            Get ProductsList For Admin
+            </summary>
+            <param name="pageId">default is 1</param>
+            <param name="pageSize">default is 100</param>
+            <param name="filterName">default is empty</param>
+            <response code="400">invalid inputs</response>
+            <response code="403">forbidden</response>
+            <response code="404">no item found</response>
+            <response code="500">server error</response>
+            <returns>Ok if successfully created</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.ProductController.CreateProduct(SparkPlugSln.Domain.Models.Product.CreateProductDto)">
+            <summary>
+            Create Product By Admin
+            </summary>
+            <param name="createProductDto"></param>
+            <response code="400">invalid inputs</response>
+            <response code="403">forbidden</response>
+            <response code="500">server error</response>
+            <returns>Ok if successfully created</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.ProductController.GetProductForEdit(System.UInt64)">
+            <summary>
+            Get Product for edit By Admin
+            </summary>
+            <param name="productId"></param>
+            <response code="400">invalid inputs</response>
+            <response code="403">forbidden</response>
+            <response code="404">product not found</response>
+            <response code="500">server error</response>
+            <returns>Ok if successfully edited</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.ProductController.EditProduct(SparkPlugSln.Domain.Models.Product.EditProductDto)">
+            <summary>
+            Edit Product By Admin
+            </summary>
+            <param name="editProductDto"></param>
+            <response code="400">invalid inputs</response>
+            <response code="403">forbidden</response>
+            <response code="404">product not found</response>
+            <response code="500">server error</response>
+            <returns>Ok if successfully edited</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.ProductController.DeleteProduct(System.UInt64)">
+            <summary>
+            Delete Product By Admin
+            </summary>
+            <param name="productId"></param>
+            <response code="403">forbidden</response>
+            <response code="404">product not found</response>
+            <response code="500">server error</response>
+            <returns>Ok if successfully deleted</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.UserController.Login(System.String)">
+            <summary>
+            Used to get login sms
+            </summary>
+            <param name="tell">The user's tell</param>
+            <response code="200">Returns Ok if sms sent</response>
+            <response code="400">Invalid input</response>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.UserController.Login(SparkPlugSln.Domain.Models.User.LoginDto)">
+            <summary>
+            Authenticates a user and returns a JWT token.
+            </summary>
+            <param name="loginDto">The user's login credentials.</param>
+            <returns>A JWT token and user details.</returns>
+            <response code="400">Invalid input</response>
+            <response code="400">Code incorrect</response>
+            <response code="404">User not found</response>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.UserController.GetUserAddresses(System.Guid)">
+            <summary>
+            GetUserAddresses
+            </summary>
+            <param name="userId"></param>
+            <response code="400">invalid input</response>
+            <response code="404">user not found</response>
+            <response code="204">user has no address</response>
+            <returns>Returns a list of user addresses</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.UserController.AddUserAddresses(SparkPlugSln.Domain.Models.User.AddAddressDto)">
+            <summary>
+            GetUserAddresses
+            </summary>
+            <response code="400">invalid input</response>
+            <response code="404">user not found</response>
+            <response code="500">server error</response>
+            <returns>Returns a list of user addresses</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.UserController.GetUsersList(System.Int32,System.Int32,System.String,System.String)">
+            <summary>
+            Get List of users for admin
+            </summary>
+            <param name="pageId">default is 1</param>
+            <param name="pageSize">default is 100</param>
+            <param name="filterName">default is empty</param>
+            <param name="filterTell">default is empty</param>
+            <response code="403">forbidden</response>
+            <response code="404">no user found</response>
+            <returns>list of users with pagination</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.UserController.GetUserDetails(System.Guid)">
+            <summary>
+            Get details of one user
+            </summary>
+            <param name="userId"></param>
+            <response code="400">invalid input</response>
+            <response code="403">forbidden</response>
+            <response code="404">user not found</response>
+            <response code="500">server error</response>
+            <returns>list of users with pagination</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.UserController.EditUser(SparkPlugSln.Domain.Models.User.EditUserDto)">
+            <summary>
+            Edit a user by admin
+            </summary>
+            <param name="editUserDto"></param>
+            <response code="200">edit successful</response>
+            <response code="400">invalid input</response>
+            <response code="403">forbidden</response>
+            <response code="404">user not found</response>
+            <response code="500">server error</response>
+            <returns>ok if edit successful</returns>
+        </member>
+        <member name="M:SparkPlugSln.Api.Controllers.UserController.DeleteUser(System.Guid)">
+            <summary>
+            Delete Product By Admin
+            </summary>
+            <param name="userId"></param>
+            <response code="403">forbidden</response>
+            <response code="404">user not found</response>
+            <response code="500">server error</response>
+            <returns>Ok if successfully deleted</returns>
+        </member>
+    </members>
+</doc>
