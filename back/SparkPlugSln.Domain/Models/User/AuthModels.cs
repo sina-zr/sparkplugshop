@@ -11,7 +11,7 @@ public class LoginDto
     public string Code { get; set; }
 }
 
-public class LoginResponseDto
+public class LoginResponseVm
 {
     public string Token { get; set; }
     public Guid UserId { get; set; }
