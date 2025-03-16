@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SparkPlugSln.Application.Services.Interfaces;
 using SparkPlugSln.Domain.Models.Product;
 
 namespace SparkPlugSln.Api.Controllers;
@@ -7,9 +9,10 @@ namespace SparkPlugSln.Api.Controllers;
 [Route("api/[controller]/[action]")]
 public class ProductController : Controller
 {
-    public ProductController()
+    private readonly IProductService _productService;
+    public ProductController(IProductService productService)
     {
-        
+        _productService = productService;
     }
 
     /// <summary>
@@ -47,7 +50,7 @@ public class ProductController : Controller
     {
         return Ok();
     }
-    
+
     /// <summary>
     /// Create Product By Admin
     /// </summary>
@@ -56,10 +59,32 @@ public class ProductController : Controller
     /// <response code="403">forbidden</response>
     /// <response code="500">server error</response>
     /// <returns>Ok if successfully created</returns>
+    [Authorize(Policy = "AdminOnly")]
     [HttpPost("/admin/[action]")]
-    public IActionResult CreateProduct(CreateProductDto createProductDto)
+    public async Task<IActionResult> CreateProductAsync(CreateProductDto createProductDto)
     {
-        return Ok();
+        if (!ModelState.IsValid)
+        {
+            return BadRequest("Invalid inputs");
+        }
+
+        try
+        {
+            var result = await _productService.CreateProduct(createProductDto);
+
+            if (result)
+            {
+                return Ok("Product created successfully");
+            }
+            else
+            {
+                return StatusCode(500, "Failed to create product");
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "An error occurred while creating the product");
+        }
     }
 
     /// <summary>
