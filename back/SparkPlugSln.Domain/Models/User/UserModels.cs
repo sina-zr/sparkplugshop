@@ -21,6 +21,7 @@ public class UsersListVm
 
 public class UserDetailsVm
 {
+    public Guid Id { get; set; }
     public string FullName { get; set; } = "";
     public string Tell { get; set; }
     public string? Password { get; set; }

@@ -4,9 +4,11 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using SparkPlugSln.Application.Helpers;
 using SparkPlugSln.Application.Security;
 using SparkPlugSln.Application.Services.Interfaces;
 using SparkPlugSln.Domain.Models.User;
@@ -47,7 +49,7 @@ public class UserController : Controller
             return BadRequest("Invalid input");
         }
         
-        //await _userService.UpsertUser(tell);
+        await _userService.UpsertUser(tell);
         
         return Ok();
     }
@@ -57,29 +59,28 @@ public class UserController : Controller
     /// </summary>
     /// <param name="loginDto">The user's login credentials.</param>
     /// <returns>A JWT token and user details.</returns>
-    /// <response code="400">Invalid input</response>
-    /// <response code="400">Code incorrect</response>
-    /// <response code="404">User not found</response>
+    /// <response code="400">invalid input</response>
+    /// <response code="400">code incorrect</response>
+    /// <response code="404">user not found</response>
     [HttpPost("/login")]
-    [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginResponseVm), StatusCodes.Status200OK)]
     public async Task<IActionResult> Login(LoginDto loginDto)
     {
-        return Ok();
         if (!ModelState.IsValid)
         {
-            return BadRequest("Invalid Input");
+            return BadRequest("invalid input");
         }
 
         // Fetch the user from the database
         var user = await _userService.GetUserByTell(loginDto.Tell);
         if (user == null)
         {
-            return NotFound("User not found");
+            return NotFound("user not found");
         }
 
         if (loginDto.Code != user.VerificationCode)
         {
-            return BadRequest("Code incorrect");
+            return BadRequest("code incorrect");
         }
 
         // Create claims for the JWT token
@@ -93,7 +94,7 @@ public class UserController : Controller
         // Generate the JWT token
         var token = GenerateJwtToken(claims);
         
-        return Ok(new LoginResponseDto
+        return Ok(new LoginResponseVm
         {
             Token = token,
             UserId = user.Id,
@@ -106,16 +107,34 @@ public class UserController : Controller
     /// <summary>
     /// GetUserAddresses
     /// </summary>
-    /// <param name="userId"></param>
-    /// <response code="400">invalid input</response>
     /// <response code="404">user not found</response>
     /// <response code="204">user has no address</response>
     /// <returns>Returns a list of user addresses</returns>
     [HttpGet("/[action]")]
     [ProducesResponseType(typeof(List<AddressVm>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetUserAddresses(Guid userId)
+    [Authorize]
+    public async Task<IActionResult> GetUserAddresses()
     {
-        return Ok();
+        var userId = User.GetId();
+        var user = await _userService.GetUserById(userId);
+        if (user == null)
+        {
+            return NotFound("user not found");
+        }
+        
+        var addressList = await _userService.GetUserAddresses(userId);
+        if (!addressList.Any())
+        {
+            return NoContent();
+        }
+
+        var addressVmList = addressList.Select(a => new AddressVm
+        {
+            Id = a.Id,
+            Address = a.Address,
+        }).ToList();
+        
+        return Ok(addressVmList);
     }
     
     /// <summary>
@@ -127,8 +146,26 @@ public class UserController : Controller
     /// <returns>Returns a list of user addresses</returns>
     [HttpGet("/[action]")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> AddUserAddresses(AddAddressDto addressDto)
+    [Authorize]
+    public async Task<IActionResult> AddUserAddresses([Required] string address)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest("invalid input");
+        }
+
+        var userId = User.GetId();
+        var user = await _userService.GetUserById(userId);
+        if (user == null)
+        {
+            return NotFound("user not found");
+        }
+
+        var result = await _userService.AddUserAddress(userId, address);
+        if (!result)
+        {
+            return StatusCode(500, "server error");
+        }
         return Ok();
     }
     
@@ -173,9 +210,18 @@ public class UserController : Controller
     /// <returns>list of users with pagination</returns>
     [HttpGet("/admin/[action]")]
     [ProducesResponseType(typeof(UsersListVm), StatusCodes.Status200OK)]
-    public IActionResult GetUsersList(int pageId = 1, int pageSize = 100, string? filterName = null, string? filterTell = null)
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetUsersList(int pageId = 1, int pageSize = 100, string? filterName = null, string? filterTell = null)
     {
-        return Ok();
+        // Call the UserService to get the paginated list of users
+        var usersListVm = await _userService.GetUsersListAsync(pageId, pageSize, filterName, filterTell);
+
+        if (usersListVm.Users.Count < 1 || !usersListVm.Users.Any())
+        {
+            return NotFound("No users found.");
+        }
+        
+        return Ok(usersListVm);
     }
     
     /// <summary>
@@ -185,15 +231,38 @@ public class UserController : Controller
     /// <response code="400">invalid input</response>
     /// <response code="403">forbidden</response>
     /// <response code="404">user not found</response>
-    /// <response code="500">server error</response>
-    /// <returns>list of users with pagination</returns>
+    /// <returns>user with details</returns>
     [HttpGet("/admin/[action]")]
     [ProducesResponseType(typeof(UserDetailsVm), StatusCodes.Status200OK)]
-    public IActionResult GetUserDetails(Guid userId)
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetUserDetails(Guid userId)
     {
-        return Ok();
+        if (userId == Guid.Empty)
+        {
+            return BadRequest("invalid input");
+        }
+
+        var user = await _userService.GetUserWithDetails(userId);
+        if (user == null)
+        {
+            return NotFound("user not found");
+        }
+
+        var userDetailsVm = new UserDetailsVm
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Tell = user.Tell,
+            Role = user.Role,
+            IsTellVerified = user.IsTellVerified,
+            ProfileImageName = user.ProfileImageName,
+            Addresses = user.UserAddresses.Select(a => a.Address).ToList(),
+            Password = user.Password,
+            VerificationCode = user.VerificationCode,
+        };
+
+        return Ok(userDetailsVm);
     }
-    
         
     /// <summary>
     /// Edit a user by admin
@@ -206,8 +275,26 @@ public class UserController : Controller
     /// <response code="500">server error</response>
     /// <returns>ok if edit successful</returns>
     [HttpGet("/admin/[action]")]
-    public IActionResult EditUser(EditUserDto editUserDto)
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> EditUser(EditUserDto editUserDto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest("invalid input");
+        }
+        
+        var user = await _userService.GetUserById(editUserDto.Id);
+        if (user == null)
+        {
+            return NotFound("user not found");
+        }
+
+        var result = await _userService.EditUser(editUserDto);
+        if (!result)
+        {
+            return StatusCode(500, "server error");
+        }
+
         return Ok();
     }
     
@@ -220,8 +307,21 @@ public class UserController : Controller
     /// <response code="500">server error</response>
     /// <returns>Ok if successfully deleted</returns>
     [HttpPost("/admin/[action]")]
-    public IActionResult DeleteUser(Guid userId)
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteUser(Guid userId)
     {
+        var user = await _userService.GetUserById(userId);
+        if (user == null)
+        {
+            return NotFound("user not found");
+        }
+
+        var result = await _userService.DeleteUser(userId);
+        if (!result)
+        {
+            return StatusCode(500, "server error");
+        }
+
         return Ok();
     }
 

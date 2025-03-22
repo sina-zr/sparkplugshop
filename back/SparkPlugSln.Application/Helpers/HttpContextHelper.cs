@@ -18,13 +18,13 @@ public static class HttpContextHelper
 
     public static string GetName(this ClaimsPrincipal user)
     {
-        return user.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value;
+        return user.FindFirst("FullName")?.Value;
     }
     
-    public static int GetId(this ClaimsPrincipal user)
+    public static Guid GetId(this ClaimsPrincipal user)
     {
-        var idString = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        int id = int.Parse(idString);
+        var idString = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var id = Guid.Parse(idString);
         return id;
     }
 }
