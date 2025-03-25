@@ -14,5 +14,6 @@ namespace SparkPlugSln.Application.Services.Interfaces
         Task<EditProductVm> GetProductForEdit(ulong productId);
         Task<bool> EditProduct(EditProductDto editProductDto);
         Task<bool> DeleteProduct(ulong productId);
+        Task<ProductVm> GetProductDetails(ulong productId);
     }
 }
