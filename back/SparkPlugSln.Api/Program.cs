@@ -7,6 +7,7 @@ using SparkPlugSln.Application.Services.Implementations;
 using SparkPlugSln.Application.Services.Interfaces;
 using SparkPlugSln.Domain.Enums;
 using SparkPlugSln.Domain.IRepositories;
+using SparkPlugSln.Domain.Models.kavenegar;
 using SparkPlugSln.Persistence;
 using SparkPlugSln.Persistence.Repositories;
 
@@ -63,10 +64,17 @@ builder.Services.AddAuthorization(options =>
 
 #endregion
 
+#region Kavenegar
+
+builder.Services.Configure<KavenegarInfoVm>(builder.Configuration.GetSection("KavenegarInfo"));
+
+#endregion
+
 #region DI
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISmsService, SmsService>();
 
 #endregion
 

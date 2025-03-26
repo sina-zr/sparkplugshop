@@ -9,6 +9,7 @@ public interface IUserService
     Task<User?> GetUserById(Guid userId);
     Task<bool> UpsertUser(string tell);
     Task<List<UserAddress>> GetUserAddresses(Guid userId);
+    Task<UserAddress?> GetAddressById(ulong addressId);
     Task<bool> AddUserAddress(Guid userId, string address);
     Task<UsersListVm> GetUsersListAsync(int pageId, int pageSize, string? filterName, string? filterTell);
     Task<User?> GetUserWithDetails(Guid userId);

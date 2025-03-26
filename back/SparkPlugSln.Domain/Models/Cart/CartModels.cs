@@ -13,4 +13,5 @@ public class CartDto
     public Guid UserId { get; set; }
     [Required] public List<CartItemDto> Items { get; set; }
     public ulong? AddressId { get; set; }
+    public ulong ShipmentFee { get; set; }
 }

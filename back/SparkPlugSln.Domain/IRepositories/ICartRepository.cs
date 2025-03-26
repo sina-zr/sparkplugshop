@@ -8,7 +8,7 @@ public interface ICartRepository
 
     IQueryable<Cart> GetAllCarts();
 
-    Task<Cart?> GetCartById(int id);
+    Task<Cart?> GetCartById(ulong id);
 
     Task<Cart> AddCart(Cart cart);
 
