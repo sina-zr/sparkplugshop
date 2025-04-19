@@ -15,6 +15,7 @@ public class User : BaseEntity<Guid>
     #region Relations
 
     public ICollection<UserAddress> UserAddresses { get; set; }
+    public ICollection<Cart.Cart> Carts { get; set; }
 
     #endregion
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SparkPlugSln.Application.Security;
 using SparkPlugSln.Application.Services.Interfaces;
 using SparkPlugSln.Domain.Entities.User;
+using SparkPlugSln.Domain.Enums;
 using SparkPlugSln.Domain.IRepositories;
 using SparkPlugSln.Domain.Models.User;
 
@@ -10,10 +11,12 @@ namespace SparkPlugSln.Application.Services.Implementations;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly ISmsService _smsService;
 
-    public UserService(IUserRepository userRepository)
+    public UserService(IUserRepository userRepository, ISmsService smsService)
     {
         _userRepository = userRepository;
+        _smsService = smsService;
     }
 
     public async Task<User?> GetUserByTell(string tell)
@@ -41,16 +44,18 @@ public class UserService : IUserService
                 VerificationCode = Generator.GenerateVerificationCode().ToString()
             };
 
-            // sms code
-
             await _userRepository.AddUser(newUser);
+            
+            // sms code
+            await _smsService.SendLookupSMS(newUser.Tell, "کد ورود",newUser.VerificationCode);
         }
         else
         {
-            // sms code
-
             user.VerificationCode = Generator.GenerateVerificationCode().ToString();
             _userRepository.UpdateUser(user);
+            
+            // sms code
+            await _smsService.SendLookupSMS(user.Tell, "کد ورود",user.VerificationCode);
         }
 
         return true;
@@ -102,6 +107,7 @@ public class UserService : IUserService
         {
             pageId = pageCount;
         }
+
         int skip = (pageId - 1) * pageSize;
         if (skip < 0)
         {
@@ -115,7 +121,9 @@ public class UserService : IUserService
                 FullName = u.FullName,
                 Tell = u.Tell,
                 SignInDate = u.CreateDate,
-                PurchasedSum = 0 // TODO: Calculate
+                PurchasedSum = (ulong)u.Carts
+                    .Where(c => !c.IsDelete && c.CartStatus == CartStatus.Paid)
+                    .Sum(c => c.CartItems.Sum(i => (decimal)i.Product.Price * i.Count) + (decimal)c.ShipmentFee)
             }).ToListAsync();
 
 
@@ -130,8 +138,8 @@ public class UserService : IUserService
     public async Task<User?> GetUserWithDetails(Guid userId)
     {
         var user = await _userRepository.GetAllUsers()
-        .Include(u => u.UserAddresses)
-        .FirstOrDefaultAsync(u => u.Id == userId);
+            .Include(u => u.UserAddresses)
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
         return user;
     }
@@ -139,7 +147,7 @@ public class UserService : IUserService
     public async Task<bool> EditUser(EditUserDto editUserDto)
     {
         var user = await _userRepository.GetAllUsers()
-        .FirstOrDefaultAsync(u => u.Id == editUserDto.Id);
+            .FirstOrDefaultAsync(u => u.Id == editUserDto.Id);
 
         if (user == null)
         {
@@ -150,18 +158,21 @@ public class UserService : IUserService
         {
             user.FullName = editUserDto.FullName;
         }
+
         user.Tell = editUserDto.Tell;
 
         if (!string.IsNullOrEmpty(editUserDto.Password))
         {
             user.Password = editUserDto.Password;
         }
+
         user.IsTellVerified = editUserDto.IsTellVerified;
         user.Role = editUserDto.Role;
 
         if (editUserDto.ProfileImageName != null)
         {
-            user.ProfileImageName = IOHelper.StoreNewFile(editUserDto.ProfileImageName, "wwwroot/images/users", user.Id.ToString());
+            user.ProfileImageName =
+                IOHelper.StoreNewFile(editUserDto.ProfileImageName, "wwwroot/images/users", user.Id.ToString());
         }
 
         _userRepository.UpdateUser(user);
@@ -177,7 +188,7 @@ public class UserService : IUserService
             var addressesToDelete = currentAddresses
                 .Where(ca => !editUserDto.Addresses.Contains(ca.Address))
                 .ToList();
-            
+
             foreach (var address in addressesToDelete)
             {
                 _userRepository.DeleteUserAddress(address);
@@ -195,13 +206,14 @@ public class UserService : IUserService
 
             await _userRepository.AddRangeUserAddresses(newAddresses);
         }
+
         return true;
     }
 
     public async Task<bool> DeleteUser(Guid userId)
     {
         var user = await _userRepository.GetAllUsers()
-        .FirstOrDefaultAsync(u => u.Id == userId);
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
         {
@@ -210,5 +222,10 @@ public class UserService : IUserService
 
         _userRepository.DeleteUser(user);
         return true;
+    }
+
+    public async Task<UserAddress?> GetAddressById(ulong addressId)
+    {
+        return await _userRepository.GetUserAddressById(addressId);
     }
 }
